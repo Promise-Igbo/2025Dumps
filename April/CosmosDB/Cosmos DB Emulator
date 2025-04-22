@@ -1,0 +1,38 @@
+## Install Azure Developer CLI
+## Install Docker Desktop (make sure it is running)
+## Install Node.js 22 or newer
+
+Download Azure Cosmos DB Emulator
+Run the installer on your local machine with administrative privileges.
+# The emulator automatically installs the appropriate developer certificates and configures firewall rules on your local machine.
+# Start the emulator's executable at the %ProgramFiles%\Azure Cosmos DB Emulator path, run
+.\Microsoft.Azure.Cosmos.Emulator.exe 
+# This runs for NoSQL
+
+# To run for MongoDB, you can use another datapath or use same path(same path will wipe out former data)  
+C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe /EnableMongoDbEndpoint /DataPath="C:\CosmosMongoDB"
+# or
+ .\Start-CosmosDbMongoFresh.ps1 
+
+# Use the MongoDB Node.js driver to connect to the emulator from a Node.js/JavaScript application.
+# azd auth login
+# Connect to the emulator from the SDK using Nodejs(in new folder i.e Nodejs folder)
+npm init es6 --yes
+# Install the mongodb package from Node Package Manager.
+npm install --save mongodb
+npm install mongodb@2.2.36  # for emulator
+# Create the app.js file.
+# Import the MongoClient type from the mongodb module.
+# Use MongoClient to create a new client instance using the emulator's credentials. Use connect to connect to the emulator.
+# mongodb uri, database and collection to create a database and container, Create a new item
+# Run the Node.js application.
+node app.js
+
+# Error: self-signed certificate; if the root CA is installed locally, try running Node.js with --use-system-ca
+# to disable the SSL validation
+# Add "&sslValidate=false" at the end of mongo db uri
+# Run the Node.js application.
+node app.js
+
+# using .env file run
+npm install dotenv
