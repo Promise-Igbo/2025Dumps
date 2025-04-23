@@ -1,13 +1,9 @@
 # Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. 
 # It is built on PowerShell Workflow
 # Create automation account
-
-# Import the required Azure module
-Import-Module Az.Accounts
-Import-Module Az.Websites
-
-# Authenticate with Azure
-Connect-AzAccount -Identity
+# When you run this script, you can link to a schedule, you will be requested to add a input parameters.
+# note before running this script, remove all the hash tags in the script and run it in Azure Automation account.
+# This script is an example of how to create a runbook in Azure Automation that starts or stops an Azure Web App.
 
 # Define parameters for the runbook
 param (
@@ -21,6 +17,13 @@ param (
     [ValidateSet("Start", "Stop")]
     [string]$Action
 )
+
+# Import the required Azure module
+Import-Module Az.Accounts
+Import-Module Az.Websites
+
+# Authenticate with Azure
+Connect-AzAccount -Identity
 
 # Perform the action on the web app
 if ($Action -eq "Start") {
