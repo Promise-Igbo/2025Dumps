@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+      name: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          volumeDevices:
+            - name: azuredisk
+              devicePath: /dev/sdx
+      volumes:
+        - name: azuredisk
+          persistentVolumeClaim:
+            claimName: pvc-azuredisk-csi-premium-zrs

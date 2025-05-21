@@ -1,0 +1,37 @@
+az group create --name sentinelrg --location eastus
+az monitor log-analytics workspace create -g sentinelrg --workspace-name sentinelspace
+
+# Give Microsoft Sentinel Contributor permissions on the resource group that the workspace belongs to.
+#  Microsoft Sentinel doesn't support moving that workspace to another resource group or subscription.
+
+# Search for Microsoft Sentinel and add the already created workspace.
+
+# content hub in Microsoft Sentinel is the centralized location to discover and manage out-of-the-box content including data connectors.
+
+# Click on content hub under content management
+# Find and select the Azure Activity solution, select Install.
+# select Configuration > Data connectors and search for and select the Azure Activity data connector.
+# select Open connector page. 
+# Select Launch Azure Policy Assignment Wizard.
+# On the Basics tab, set the Scope to the subscription and resource group that has activity to send to Microsoft Sentinel.
+# Select the Parameters tab, and set the Primary Log Analytics workspace, create remediation task.
+# Review + create and Create.
+
+##How to manage content in the content hub.
+# select Content hub, search for and select Suspicious Resource deployment rule template in the Azure Activity solution.
+# select Create rule to create a new rule using the Analytics rule wizard.
+# Analytics rule wizard - Create a new Scheduled rule page, change the Status to Enabled.
+#  Review and create
+
+## View data ingested into Microsoft Sentinel
+# select Configuration > Data connectors and search for and select the Azure Activity data connector.
+# In the connector details pane, select Open connector page.
+# Review the Status of the data connector. It should be Connected.
+
+# Go to azure monitor -> Activity log blade -> Export Activity Logs -> Select audit category and send to log analytics workspace
+# You can create and delete resources to test.
+
+# It needs about 10 -15mins to propagate
+
+# You can query the data in KQL mode by typing : AzureActivity
+

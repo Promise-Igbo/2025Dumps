@@ -1,0 +1,12 @@
+# install Jenkins as a Docker container
+docker pull jenkins/jenkins:lts-jdk17
+docker run -p 8080:8080 -p 50000:50000 --restart=on-failure jenkins/jenkins:lts-jdk17
+http://localhost:8080
+# To get the password
+docker logs <container id>
+# if the Jenkins is behind a firewall and does not have access to the internet, setup HTTP Proxy Configuration
+# Dashboard > manage Jenkins > System > Setup HTTP Proxy > Save > Apply
+
+# install Jenkins on kubernetes using helm
+helm repo add jenkins https://charts.jenkins.io
+helm repo update
