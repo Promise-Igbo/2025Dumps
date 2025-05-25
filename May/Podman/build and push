@@ -1,0 +1,11 @@
+# us podman to build images
+podman build -t my-image:latest .
+
+# specify a Dockerfile explicitly
+podman build -f ./Dockerfile.custom -t my-image:latest .
+
+# push a docker image
+# First login to the registry e.g docker
+podman login docker.io
+podman push my-image:latest docker.io/yourusername/my-image:latest
+

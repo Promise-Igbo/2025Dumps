@@ -1,0 +1,13 @@
+# machine should be 2vCpus
+# machine name is Ubuntu Kubernetes i.e. Ubuntu OS image with Kubernetes pre installed
+kubectl version --client && kubeadm version && kubelet --version
+sudo kubeadm init
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# install a network plugin
+# i use calico
+kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+kubectl get pods -n kube-system -w
+kubectl get nodes

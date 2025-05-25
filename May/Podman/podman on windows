@@ -1,0 +1,47 @@
+choco install podman-cli
+podman -v
+podman machine init
+podman machine start
+
+# when you run into compatiblity issue do
+podman machine set --rootful
+
+#  Log in with Red Hat Credentials
+podman login registry.redhat.io
+# Put in your redhat username and password
+podman pull registry.redhat.io/rhel7/rhel:7.9
+podman images
+# you can use the podman run command to create a new container that uses the image. 
+podman run registry.redhat.io/rhel7/rhel:7.9 echo 'Red Hat'
+podman ps
+podman ps --all
+
+# automatically remove a container when it exits 
+podman run --rm registry.redhat.io/rhel7/rhel:7.9 echo 'Red Hat'
+podman ps --all  
+# or
+podman rm <container_id>
+
+# To assign a name to your containers
+podman run --name podman_rhel7 `
+    registry.redhat.io/rhel7/rhel:7.9 echo 'Red Hat'
+podman ps --all
+
+# to retrieve the UUID long container ID
+podman ps --all --format=json
+
+# Exposing Containers
+podman run -p 8080:8080 `
+    registry.access.redhat.com/ubi8/httpd-24:latest
+
+# You can access the HTTP server at localhost:8080
+
+# To run the container to run in the background, to avoid the terminal being blocked
+podman run -d -p 8080:8080 `
+    registry.access.redhat.com/ubi8/httpd-24:latest
+
+# Using Environment Variables
+podman run -e NAME='Red Hat' `
+    registry.redhat.io/rhel7/rhel:7.9 printenv NAME
+podman run --rm -e GREET=Hello -e NAME='Red Hat' `
+    registry.ocp4.example.com:8443/ubi8/ubi-minimal:8.5 printenv GREET NAME

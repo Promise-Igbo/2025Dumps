@@ -1,0 +1,105 @@
+## Managing Podman Networks
+# Creates a new Podman network
+podman network create
+
+# Lists all Podman networks
+podman network ls
+
+# Inspects a Podman network
+# podman network inspect <network_name>
+
+# # Removes a Podman network
+# podman network rm <network_name>
+
+# Prunes a Podman network that is not in use
+podman network prune
+
+# # Connects a container to a Podman network
+# podman network connect <network_name> <container_name>
+
+# # Disconnects a container from a Podman network
+# podman network disconnect <network_name> <container_name>
+
+# # Creates a new Podman network with a specific subnet
+# podman network create --subnet <subnet> <network_name>
+# # Creates a new Podman network with a specific gateway
+# podman network create --gateway <gateway> <network_name>
+# # Creates a new Podman network with a specific IP range
+# podman network create --ip-range <ip_range> <network_name>
+# # Creates a new Podman network with a specific DNS server
+# podman network create --dns <dns_server> <network_name>
+
+
+podman network create example-net
+podman run -d --name my-container `
+    --net example-net nginx:latest
+
+podman network create postgres-net
+podman network create redis-net
+podman run -d --name double-connector `
+    --net postgres-net,redis-net `
+    nginx:latest
+# OR
+podman network disconnect example-net my-container
+podman network connect example-net my-container
+
+## Enabling Domain Name Resolution
+podman network create test-net
+podman run --net test-net --name basic-container nginx
+
+podman run -p 8075:80 nginx
+# To publish a container to a specific host and to limit the networks it is accessible from
+podman run -p 127.0.0.1:8075:80 nginx
+# To list port mappings for a container
+podman port container_id
+
+# List port mappings for all containers
+podman port --all
+
+## Containers attached to Podman networks are assigned private IP addresses for each network.
+# retrieves the private IP address of the container within the apps network.
+podman inspect my-app `
+    -f '{{.NetworkSettings.Networks.apps.IPAddress}}'
+
+# Start Processes in Containers
+podman exec [options] container [command ...]
+# the following command prints the /etc/httpd/conf/httpd.conf file by using the cat command in a running container called httpd:
+podman exec httpd cat /etc/httpd/conf/httpd.conf
+
+# Use --env or -e to specify environment variables.
+
+# Use --interactive or -i to instruct the container to accept input.
+
+# Use --tty or -t to allocate a pseudo terminal.
+
+# Use --latest or -l to execute the command in the last created container.
+
+# Copy Files In and Out of Containers
+podman cp [options] [container:]source_path [container:]destination_path
+# Use the following command to copy the /tmp/logs file from a container with ID a3bd6c81092e to the current directory
+podman cp a3bd6c81092e:/tmp/logs .
+# Use the following command to copy the nginx.conf file to the /etc/nginx/ directory in a container called nginx
+podman cp nginx.conf nginx:/etc/nginx/
+# Use the following command to copy the nginx.conf file from the nginx-test container to the nginx-proxy container
+podman cp nginx-test:/etc/nginx/nginx.conf nginx-proxy:/etc/nginx/nginx.conf
+
+# Stopping Containers Forcefully
+podman stop [options] container [container ...]
+podman kill httpd
+# Pausing Containers
+podman pause [container id]
+podman unpause [container id]
+# Restarting Containers
+podman restart [container name or id]
+podman restart [container name or id] --force
+podman rm --all
+
+# Generate a Systemd Unit File
+podman generate systemd --name [container name] --files
+# use the systemctl command to reload the systemd configuration.
+systemctl --user daemon-reload
+# To manage a containerized service, use the systemctl command.
+# by default, systemd starts the service at your login, and stops it at your logout
+systemctl --user [start, stop, status, enable, disable] container-web.service
+# You can start your enabled services at the operating system boot, and stop them on shutdown
+loginctl enable-linger
