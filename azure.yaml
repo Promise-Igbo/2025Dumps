@@ -1,0 +1,7 @@
+name: ImageResizeWebApp
+
+services:
+  ImageResizeWebApp:
+    project: May/Copilot/storage-blob-upload-from-webapp/ImageResizeWebApp
+    language: dotnet
+    host: appservice

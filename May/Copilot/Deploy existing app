@@ -1,0 +1,25 @@
+# Use agent mode
+# use GitHub Copilot agent mode to create Bicep deployment files and an azd template for the application.
+git clone https://github.com/Azure-Samples/storage-blob-upload-from-webapp.git
+
+# select the Open Chat icon, Select Agent under the chat text box.
+# Enter the following prompt
+Help me deploy my project to Azure
+
+# it generated the infra folder consisting of main.bicep and main.parameters.json
+# It created the azure.yaml file
+
+# it will run this for you
+# azd init
+# azd provision
+# azd deploy
+
+## Create and deploy a website by using GitHub Copilot for Azure in ask mode
+# type @azure
+# then follow up with 
+Could you help me create and deploy a simple Flask website by using an azd template?
+# it provides command you run
+# you can ask questions before running those commands, like
+@azure Before I execute azd init, what does it do?
+@azure What resources are created with this template?
+# use azd up to deploy the resources
