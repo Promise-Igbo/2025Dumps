@@ -2,3 +2,6 @@
 # Connect your cluster by installing a read-only agent in your terminal or cloud shell
 # click on connect cluster and follow the instructions
 # install the agent
+# On AKS > workload > deployment, pods etc to see castai-agent deployed
+# https://medium.com/javarevisited/cost-optimization-cast-ai-platform-for-aks-cost-management-2ffd58b79058
+# https://docs.cast.ai/docs/getting-started
