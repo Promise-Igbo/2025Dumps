@@ -1,0 +1,29 @@
+##  Configure Azure Virtual Environment
+# RBAC roles: Contributor	Used to deploy all the required resources.
+# User access administrator	Used to assign users you specify during deployment access to sign into a remote session.
+# One or two user accounts that you want to assign access to the remote session, must be members of the same Microsoft Entra tenant as the subscription you're using, not guests.
+# Available quota for your subscription for the Standard_D4ds_v4 virtual machine.
+# Internet access from the new virtual machine that gets deployed.
+
+# register the Microsoft.DesktopVirtualization resource provider on your Azure subscription.
+az provider register --namespace Microsoft.DesktopVirtualization
+
+# Deploy a sample Azure Virtual Desktop environment
+# On Quickstart: Select Get started quickly with Azure Virtual Desktop and create
+
+# You can connect to your sample desktop from a web browser, windows or macos device
+# For web browser:
+Open a web browser and go to Windows App at https://windows.cloud.microsoft/
+Sign in with a user account you assigned during deploymen
+select the Devices tab.
+The desktop you created is shown as a tile called SessionDesktop. Select Connect.
+Make your selections, then select Connect.
+
+# To grant permission:
+Select Sign in when prompted. The same account you used to sign in to the web browser is used automatically.
+At the prompt Allow remote desktop connection, select Yes.
+Once you're connected, your desktop is ready to use.
+
+# Add yourself to the application group users
+
+# To remove the AVD: stop the virtual machine and deleting the resources in the resource group.

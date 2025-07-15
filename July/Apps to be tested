@@ -1,0 +1,156 @@
+1. (Incoporate Quarkus todo into container app and integrate them)
+Paste the below command on gitbash or cli and run - 
+mvn -U io.quarkus:quarkus-maven-plugin:3.7.3:create -DplatformVersion=3.7.3 -DprojectGroupId=com.example.demo -DprojectArtifactId=todo -DclassName="com.example.demo.TodoResource" -Dpath="/api/todos" -DjavaVersion=17 -Dextensions="resteasy-jackson, hibernate-orm-panache, jdbc-postgresql, docker"
+
+2. Quarkus web app on app service and postgres database
+msdocs-quarkus-postgresql-sample-app
+Fork the project and create a codespace using main branch
+Run code 
+mvn quarkus:dev.
+Then open in browser
+Create app service with database, use Java 17, Java SE (Embedded Web Server), use postgres sql flexible server.
+
+3. This is for AKS and postgres sql:command in your CLI to navigate to the project -
+cd "C:\Labfiles\containerize-and-deploy-Java-app-to-Azure-master\Project\Airlines"
+Dockerfile for this:
+
+Add the following contents to Dockerfile -
+# Build stage
+FROM maven:3.6.0-jdk-11-slim AS build
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+COPY web ./web
+RUN mvn clean package
+
+# Package stage
+FROM tomcat:8.5.72-jre11-openjdk-slim
+COPY tomcat-users.xml /usr/local/tomcat/conf
+COPY --from=build /build/target/*.war /usr/locl/tomct/webapp/FlightBookingSystemSample.war
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+
+4.  Deploying chat app on Azure Container Apps with PostgreSQL Flexible Server
+Register Microsoft.AlertsManagement on your Azure subscription
+az provider register --namespace Microsoft.AlertsManagement
+Repo: https://github.com/technofocus-pte/rag-postgres-openai-python.git 
+
+5. Enabling semantic search in Azure Database for PostgreSQL flexible server to use Azure OpenAI
+Assign cognitive service contributor role on azure subsription
+git clone https://github.com/technofocus-pte/postgresql-case
+cd postgresql-case
+REGION=eastus2
+RG_NAME=ResourceGroup1
+# Randomly generate a password with the below command - 
+a=()
+for i in {a..z} {A..Z} {0..9};
+do
+a[$RANDOM]=$i
+done
+ADMIN_PASSWORD=$(IFS=; echo "${a[*]::18}")
+echo "Your randomly generated PostgreSQL admin user's password is:"
+
+echo $ADMIN_PASSWORD
+#  copy the password
+cd
+az deployment group create --resource-group $RG_NAME --template-file "postgresql-case/Allfiles/Labs/Shared/deploy.bicep" --parameters restore=false adminLogin=pgAdmin adminLoginPassword=$ADMIN_PASSWORD
+# Get the keys and endpoint from the Azure OpenAI resource
+# Go to postgres server, under server parameters, search for "azure.extensions", make sure Azure AI Extensions and Vector is set to "Enabled"
+# Click databases, click on connect for rental database
+# You can paste the pgadmin password you copied earlier on your cli
+# add following SQL command to enable the vector extension "CREATE EXTENSION vector;"
+CREATE EXTENSION azure_ai;
+# Note: Use your own Azure OpenAI endpoint and subscription key
+Run command - SELECT azure_ai.set_setting('azure_openai.endpoint', 'https://cog-ao6pjvko57rry.openai.azure.com');
+SELECT azure_ai.set_setting('azure_openai.subscription_key', '4ccb2fc326e747adbb518fbc4204c577');
+Run the following command to create your own table -
+DROP TABLE IF EXISTS listings;
+CREATE TABLE listings (
+id int,
+name varchar(100),
+description text,
+property_type varchar(25),
+room_type varchar(30),
+price numeric,
+weekly_price numeric
+);
+
+Run command - DROP TABLE IF EXISTS reviews;
+Run command - 
+CREATE TABLE reviews (
+id int,
+listing_id int,
+date date,
+comments text
+);
+
+Add the following command to populate the listings table with data from the CSV file:
+\COPY listings FROM 'postgresql-case/Allfiles/Labs/Shared/listings.csv' CSV HEADER
+
+Add the following command to populate the reviews table with data from the CSV file:
+\COPY reviews FROM 'postgresql-case/Allfiles/Labs/Shared/reviews.csv' CSV HEADER
+
+ALTER TABLE listings ADD COLUMN listing_vector vector(1536);
+UPDATE listings SET listing_vector = azure_openai.create_embeddings('embedding', description, max_attempts => 5, retry_delay_ms => 500) WHERE listing_vector IS NULL;
+
+# Generate an embedding vector for the description of each listing by calling Azure OpenAI through the create_embeddings user-defined function, which is implemented by the azure_ai extension.
+SELECT id, name FROM listings ORDER BY listing_vector <=> azure_openai.create_embeddings('embedding', 'bright natural light')::vector LIMIT 10;
+SELECT id, description FROM listings ORDER BY listing_vector <=> azure_openai.create_embeddings('embedding', 'bright natural light')::vector LIMIT 1;
+\d listings
+SELECT COUNT(*) > 0 FROM listings WHERE listing_vector IS NOT NULL;
+SELECT vector_dims(listing_vector) FROM listings WHERE listing_vector IS NOT NULL LIMIT 1;``
+SELECT id, name FROM listings ORDER BY listing_vector <=> azure_openai.create_embeddings('embedding', 'bright natural light')::vector LIMIT 10;
+
+# Create a recommendation function
+command - 
+CREATE FUNCTION
+recommend_listing(sampleListingId int, numResults int)
+RETURNS TABLE(
+out_listingName text,
+out_listingDescription text,
+out_score real)
+AS $$
+DECLARE
+queryEmbedding vector(1536);
+sampleListingText text;
+BEGIN
+sampleListingText := (
+SELECT
+name || ' ' || description
+FROM
+listings WHERE id = sampleListingId
+);
+queryEmbedding := (
+azure_openai.create_embeddings('embedding', sampleListingText, max_attempts => 5, retry_delay_ms => 500)
+);
+RETURN QUERY
+SELECT
+name::text,
+description,
+1 - (embedding <=> queryEmbedding) AS score
+    FROM
+        listings
+    WHERE id != sampleListingId
+    ORDER BY
+        embedding <=> queryEmbedding
+    LIMIT numResults;
+END;
+$$ LANGUAGE plpgsql;
+
+# Query recommended function
+select out_listingName, out_score from recommend_listing( (SELECT id from listings limit 1), 20); -- search for 20 listing recommendations closest to a listing
+# check your results
+\df recommend_listing
+select out_listingName, out_score from recommend_listing( (SELECT id from listings limit 1), 20); -- search for 20 listing recommendations closest to a listing
+
+
+6. Building and deploying Contoso Real Estate chat app to support customers.
+https://github.com/technofocus-pte/azure-search-openai-javascript
+
+
+7. Building a Chat bot experience using Azure Cosmos DB for MongoDB and Azure OpenAI Service
+
+8. Deploying chat application to answer questions from the user and tracks chat history
+Register Microsoft.AlertsManagement on your Azure subscription
+https://github.com/technofocus-pte/chat-csharp-cosmos-db-nosql-openai
+

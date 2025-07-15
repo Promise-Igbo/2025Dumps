@@ -1,0 +1,93 @@
+## Deploying WordPress on AWS EC2 with Amazon RDS
+# Launch an EC2 intsance
+# Create or attach a key to your instance
+# Configure the security group to allow access to HTTP (by adding or creating a security group)
+# Review and launch instance
+
+# Connect using ssh client
+ssh -i "wordpress.pem" ec2-user@ec2-13-218-67-187.compute-1.amazonaws.com
+
+## Configure the instance with Apache Webserver
+# I used git bash to run the command
+ssh -i "wordpress.pem" ec2-user@ec2-13-218-67-187.compute-1.amazonaws.com
+# Note: Make sure you run the command on the download folder
+sudo su - root
+# install the software
+yum install httpd -y
+# Start the service and make it permanent
+systemctl start httpd
+systemctl enable httpd
+# Install PHP and its required packages
+yum install php php-devel php-fpm php-mysqli php-json php-mysqlnd
+rpm -q php8.4
+php -v
+# Download and extract the WordPress software
+wget https://wordpress.org/latest.tar.gz
+tar -xzf latest.tar.gz
+ls
+# Upload the WordPress files in the root directory of the webserver
+# Apache webserver so the root directory of the webserver is /var/www/html
+mv wordpress/ /var/www/html/
+# Add or Check .htaccess File
+cd /var/www/html
+sudo nano .htaccess
+# Paste this default WordPress content:
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+
+# Save and exit.
+# You can choose to set permission
+sudo chown apache:apache /var/www/html/.htaccess
+sudo chmod 644 /var/www/html/.htaccess
+
+# Edit Apache config to allow .htaccess
+sudo nano /etc/httpd/conf/httpd.conf
+# Change it to AllowOverride None to AllowOverride All
+<!-- <Directory "/var/www/html">
+    Options Indexes FollowSymLinks
+    AllowOverride All 
+    Require all granted
+</Directory> -->
+# Restart Apache
+sudo systemctl restart httpd
+sudo systemctl enable httpd
+# We can check it by go to the url to see the installed wordpress
+http://13.218.67.187/wordpress/wp-admin/setup-config.php
+# Note: the ip will change if the instance is stopped or restarted unless you use Elastic IP
+
+# Set up a MySQL server using AWS RDS service
+# AWS RDS Service →> Create Database →> MySQL
+# Free-tier, put your db instance identifier name and password: Pa55word#123&password
+# Under storage, maximum threshold is 23,
+# Under connectivity, connect to an EC2 compute resource, then choose your EC2 instance
+# Set the security firewall →> You can choose existing db subnet group
+# Under VPC security group, choose same security group as EC2 instance
+# Under additional configuration, put the db name = db
+# Uncheck backup & upgrade and encryption
+# Create database
+# Run the following command on the terminal on the EC2 instance
+# sudo su - root (make sure you are still logged in as root)
+cd /var/www/html
+ls
+cd wordpress
+cp wp-config-sample.php wp-config.php
+vim wp-config.php or nano wp-config.php
+# Provide the endpoint/connection string to the WordPress application to make it work
+# Put the information of the database on wp-config.php file
+# restart the webserver
+systemctl restart httpd
+
+# Refresh your page on your browser
+# Click on "installing now"
+# Provide the information needed such as
+# Site Title - Mona Website, Username - admin, Password - Mona1712, check confirm weak password, put your email - mona123@gmail.com
+# Note: I have not tried using my personam details before 
+# Now you can login with your provided details.
