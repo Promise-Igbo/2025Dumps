@@ -1,0 +1,164 @@
+# Azure Event Hubs is a big data streaming platform and event ingestion service.
+az group create --name myResourceGroup --location eastus
+
+resourceGroup=myResourceGroup
+location=eastus
+namespaceName=eventhubsns$RANDOM
+
+# Create an Azure Event Hubs namespace and event hub
+# Azure Event Hubs namespace is a logical container for event hub resources within Azure
+# you can create one or more event hubs, which are used to ingest, process, and store large volumes of event data.
+az eventhubs namespace create --name $namespaceName --resource-group $resourceGroup -l $location
+az eventhubs eventhub create --name myEventHub --resource-group $resourceGroup `
+  --namespace-name $namespaceName
+
+# Assign a role to your Microsoft Entra user name
+userPrincipal=$(az rest --method GET --url https://graph.microsoft.com/v1.0/me `
+    --headers 'Content-Type=application/json' `
+    --query userPrincipalName --output tsv)
+
+#  retrieve the resource ID of the Service Bus namespace
+# The resource ID sets the scope for the role assignment to a specific namespace.
+resourceID=$(az eventhubs namespace show --resource-group $resourceGroup `
+    --name $namespaceName --query id --output tsv)
+
+# to create and assign the Azure Event Hubs Data Owner role, which gives you permission to send and retrieve events.
+az role assignment create --assignee $userPrincipal `
+    --role "Azure Event Hubs Data Owner" `
+    --scope $resourceID
+
+
+# Send and retrieve events with a .NET console application
+mkdir eventhubs
+cd eventhubs
+
+# Create the .NET console application.
+dotnet new console
+
+# add the Azure.Messaging.EventHubs and Azure.Identity packages to the project.
+dotnet add package Azure.Messaging.EventHubs
+dotnet add package Azure.Identity
+
+# to replace the template code in the Program.cs file 
+# Add the starter code for the project
+code Program.cs
+
+# Replace any existing contents with the following code.
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
+using Azure.Messaging.EventHubs.Consumer;
+using Azure.Identity;
+using System.Text;
+
+// TO-DO: Replace YOUR_EVENT_HUB_NAMESPACE with your actual Event Hub namespace
+string namespaceURL = "YOUR_EVENT_HUB_NAMESPACE.servicebus.windows.net";
+string eventHubName = "myEventHub"; 
+
+// Create a DefaultAzureCredentialOptions object to exclude certain credentials
+DefaultAzureCredentialOptions options = new()
+{
+    ExcludeEnvironmentCredential = true,
+    ExcludeManagedIdentityCredential = true
+};
+
+// Number of events to be sent to the event hub
+int numOfEvents = 3;
+
+// CREATE A PRODUCER CLIENT AND SEND EVENTS
+
+
+
+// CREATE A CONSUMER CLIENT AND RECEIVE EVENTS
+
+# Save
+
+# Add code to complete the application
+# Locate the // CREATE A PRODUCER CLIENT AND SEND EVENTS comment and add the following code directly after the comment.
+// Create a producer client to send events to the event hub
+EventHubProducerClient producerClient = new EventHubProducerClient(
+    namespaceURL,
+    eventHubName,
+    new DefaultAzureCredential(options));
+
+// Create a batch of events 
+using EventDataBatch eventBatch = await producerClient.CreateBatchAsync();
+
+
+// Adding a random number to the event body and sending the events. 
+var random = new Random();
+for (int i = 1; i <= numOfEvents; i++)
+{
+    int randomNumber = random.Next(1, 101); // 1 to 100 inclusive
+    string eventBody = $"Event {randomNumber}";
+    if (!eventBatch.TryAdd(new EventData(Encoding.UTF8.GetBytes(eventBody))))
+    {
+        // if it is too large for the batch
+        throw new Exception($"Event {i} is too large for the batch and cannot be sent.");
+    }
+}
+
+try
+{
+    // Use the producer client to send the batch of events to the event hub
+    await producerClient.SendAsync(eventBatch);
+
+    Console.WriteLine($"A batch of {numOfEvents} events has been published.");
+    Console.WriteLine("Press Enter to retrieve and print the events...");
+    Console.ReadLine();
+}
+finally
+{
+    await producerClient.DisposeAsync();
+}
+
+# Save
+
+# Locate the // CREATE A CONSUMER CLIENT AND RETRIEVE EVENTS comment and add the following code directly after the comment.
+// Create an EventHubConsumerClient
+await using var consumerClient = new EventHubConsumerClient(
+    EventHubConsumerClient.DefaultConsumerGroupName,
+    namespaceURL,
+    eventHubName,
+    new DefaultAzureCredential(options));
+
+Console.Clear();
+Console.WriteLine("Retrieving all events from the hub...");
+
+// Get total number of events in the hub by summing (last - first + 1) for all partitions
+// This count is used to determine when to stop reading events
+long totalEventCount = 0;
+string[] partitionIds = await consumerClient.GetPartitionIdsAsync();
+foreach (var partitionId in partitionIds)
+{
+    PartitionProperties properties = await consumerClient.GetPartitionPropertiesAsync(partitionId);
+    if (!properties.IsEmpty && properties.LastEnqueuedSequenceNumber >= properties.BeginningSequenceNumber)
+    {
+        totalEventCount += (properties.LastEnqueuedSequenceNumber - properties.BeginningSequenceNumber + 1);
+    }
+}
+
+// Start retrieving events from the event hub and print to the console
+int retrievedCount = 0;
+await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsAsync(startReadingAtEarliestEvent: true))
+{
+    if (partitionEvent.Data != null)
+    {
+        string body = Encoding.UTF8.GetString(partitionEvent.Data.Body.ToArray());
+        Console.WriteLine($"Retrieved event: {body}");
+        retrievedCount++;
+        if (retrievedCount >= totalEventCount)
+        {
+            Console.WriteLine("Done retrieving events. Press Enter to exit...");
+            Console.ReadLine();
+            return;
+        }
+    }
+}
+
+# Save
+
+# Sign into Azure and run the app
+az login
+dotnet run
+
+# After a few seconds you should see output 

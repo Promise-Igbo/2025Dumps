@@ -1,0 +1,70 @@
+# Policies can do things like cache responses, transform documents and values, call webhooks for notification or audit purposes, and retry requests after transient failures.
+# administrators can use policies to alter the behavior of APIs through configuration.
+# Developers design the primary functionality and behavior of an API by writing code. 
+# administrators can use policies to set limits, convert response formats, or enforce security requirements
+# policies execute at four different times:
+# 1.Inbound: These policies execute when a request is received from a client.
+# 2.Backend: These policies execute before a request is forwarded to a managed API.
+# 3.Outbound: These policies execute before a response is sent to a client.
+# 4.On-Error: These policies execute when an exception is raised.
+
+# Policies applied at the global scope affect all APIs within the instance of API Management.
+# Under API > All APIs > Add Policies
+
+# Policies applied at the API scope affect only a single API.
+# Under API > Select the API > All Operations > Add Policies
+
+# Policies applied at the operation scope affect only one operation within the API. 
+# Under API > Select the API > select the particular Operations > Add Policies
+
+# You might choose to use an external cache because:
+# 1.You want to avoid the cache being cleared when the API Management service is updated.
+# 2.You want to have greater control over the cache configuration than the internal cache allows.
+# 3.You want to cache more data than can be stored in the internal cache.
+
+# modify API behavior without having to rewrite code, by use of policies. 
+# To cache API responses, you use API Management's caching policies.
+git clone https://github.com/Promise-Igbo/mslearn-improve-api-performance-with-apim-caching-policy.git
+cd mslearn-improve-api-performance-with-apim-caching-policy
+bash setup.sh
+
+# Create a new API Management instance using Basic v2 tier
+# under APIs, select APIs > choose OpenAPI > paste the Swagger JSON URL > Create
+# Test tab, and then select the GET - GetPriceEstimate operation > Enter the following values as Template parameters and Query parameters > send
+# ShippingCode	usa
+# Game	chess
+# Height	8
+# Width	8
+
+# Add a caching policy
+# Design tab for your API, and choose the GET operation > + Add policy > Select Cache responses. The Inbound processing pane > Under Cache responses, in the Duration in seconds box, enter 600. Then select Save.
+# In the Inbound processing section, select </>. The policy XML editor appears.
+# Notice that a <cache-lookup> tag is added to the <inbound> section. A <cache-store> tag is also added to the <outbound> section.
+# Select Save.
+# select the Test tab. Then select the GET operation. The GetPriceEstimate pane appears.
+# Enter the Template parameters as before and Select Send.
+# Review the results. Notice that the precise quotePreparedTime is included in the HTTP response payload.
+# Select Send to repeat the request. Notice that the quotePreparedTime value in the response is still the same because a cached response is served.
+
+# Configure the cache to vary results based on query parameters
+# Select the Design tab for your API. Then select the GET - operation. > In the Inbound processing section, select </> to edit the policy code.
+# Replace the entire <cache-lookup> tag with the following XML:
+<cache-lookup vary-by-developer="false" vary-by-developer-groups="false" downstream-caching-type="none">
+    <vary-by-query-parameter>height</vary-by-query-parameter>
+</cache-lookup>
+# Select Save.
+
+# Test the new cache configuration
+# select the Test tab. Then select the GET - operation. > Enter the Template parameters as before and Select Send.
+# Review the results. Notice that the quotePreparedTime is included in the response.
+# As before, the time value in the response doesn't change, because a cached response was served.
+
+# change
+# Height	100
+# Select Send.
+# This time, the result is updated and changed.
+
+# Since the Width parameter doesn't affect cost, a cached response is used even when the width changes. 
+# Keep all same and change the Width	500
+# Send
+# This time, although the Width query parameter is different, the result doesn't change, because a cached response is served.

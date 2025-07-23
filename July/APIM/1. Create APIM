@@ -1,0 +1,29 @@
+$myApiName='import-apim-0903'
+$myLocation='eastus2'
+$myEmail='promise@relianceinfosystems.com'
+$myResourceGroup = 'apimtrainingrg'
+
+az group create --location $myLocation --name $myResourceGroup
+
+az apim create -n $myApiName `
+    --location $myLocation `
+    --publisher-email $myEmail  `
+    --resource-group $myResourceGroup `
+    --publisher-name Import-API-Exercise `
+    --sku-name Consumption 
+
+# To import and publish an OpenAPI specification backend API.
+# API > OpenAPI in the Create from definition > toggle to full screen > Import from URL > create
+https://bigconference.azurewebsites.net/
+
+# Configure the API settings.
+# Settings > Enter URL > Deselect the Subscription required checkbox > save
+
+# To test the API
+# Test > select the Speakers_Get operation > Send: Backend responds with 200 OK and some data.
+
+# Call an API with a subscription key
+# API > Subscriptions > Create subscription > Enter a name > > Under scope, choose API and select the API > Save
+# Select (...) show/hide subscription key > Copy the primary key
+f8710210cd6f427db2b628c5486204a3
+# Use subscription key in API call

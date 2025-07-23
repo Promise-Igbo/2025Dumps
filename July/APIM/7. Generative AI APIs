@@ -1,0 +1,23 @@
+# as you bring these APIs online, you need to manage them with and consider aspects like security, monitoring and scale them.
+# e.g token usage and handling loads and failures.
+
+# load balancing is implemented by you defining a concept called backends.
+# load balancer that distributes the load across these backends that correspond to your API endpoints.
+
+# Managed identity is a way to authenticate your API to other Azure services.
+
+git clone https://github.com/Promise-Igbo/genai-gateway-apim.git
+cd genai-gateway-apim
+# az auth login (No need to use if using cloud shell)
+azd up
+
+# Populate your .env file created
+cd src
+ls -a
+# Notice the file has been populated
+# The run the following commands:
+cd src
+npm install
+npm start
+# You can access it by navigating to http://localhost:3000
+

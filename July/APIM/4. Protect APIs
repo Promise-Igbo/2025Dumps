@@ -1,0 +1,84 @@
+# Response headers: metadata associated with HTTP responses that provide the detailed context of the response. They can expose information about the Server and platform technology being used.
+# It could allow a malicious user to attempt to exploit any bugs within that stack.
+
+# Deploy the Census web API
+git clone https://github.com/Promise-Igbo/mslearn-protect-apis-on-api-management.git
+cd mslearn-protect-apis-on-api-management
+bash setup.sh
+# Browse both URLs
+
+# Deploy an API gateway, consumption tier
+# Resource name - apim-CensusData<random number>, Organization name- Government-Census
+
+# Import the API
+# under APIs, selects APIs, and then + Add API > select OpenAPI > paste the swagger JSON URL > Create.
+
+# Test the API
+# Under APIs, select APIs, select Census Data > select the Test tab > GetLatestCensus operation > Send.
+# Notice that x-powered-by appears in the response, and shows that the framework is ASP.NET.
+
+# Remove headers
+# 1. Select Census Data > select the Design tab
+# 2. Select All operations, and in the Outbound processing section, select the </> icon. The policy XML editor appears.
+# 3. Replace the default <outbound> tag with this code:
+<outbound>
+   <set-header name="x-powered-by" exists-action="delete" />
+   <base />
+</outbound>
+# Save
+
+# Test the removal of headers
+# select Census Data > select the Test tab > GetLatestCensus operation > Send.
+# The x-powered-by header shouldn't be in the HTTP response.
+
+
+## Mask URLs with a transformation policy (Check the url and note it down before undergoing this step)
+# Under APIs, select APIs, and in the middle pane, select Census Data.
+# Select the Design tab, and then select All operations.
+# In the Outbound processing section, select the </> icon. The XML policy editor appears.
+# Inside the <outbound> element, below the <set-header-name> element you added previously, add the following element:
+<redirect-content-urls />
+# Save
+
+# Test the new policy
+# Select Census Data again > select the Test tab > Select GetLatestCensus, and then select Send.
+# You should see the name of your API Management instance in the URL.
+
+
+## Throttle API requests
+# Limit by subscription throttling
+# Limit by key throttling
+# <rate-limit-by-key> policy is not available in Consumption tier, instead use <rate-limit>.
+
+# Under APIs, select APIs, and in the middle pane, select Census Data.
+# Select the Design tab, and then select All operations.
+# In the Inbound processing section, select the </> icon. The XML policy editor appears.
+# Replace the entire <inbound> element with the following code:
+<inbound>
+    <rate-limit calls="3" renewal-period="15" />
+    <base />
+</inbound>
+# Save
+
+# policy file should contain all three policies
+<policies>
+    <inbound>
+        <rate-limit calls="3" renewal-period="15" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <set-header name="x-powered-by" exists-action="delete" />
+        <redirect-content-urls />
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
+
+# Test the policy
+# Select Census Data again > select the Test tab > Select the GetLatestCensus operation > select Send 3 times in a row.
+# Upon sending the request the third time, you should get a 429 error (too many requests) response.

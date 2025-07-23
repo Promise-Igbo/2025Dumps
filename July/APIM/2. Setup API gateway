@@ -1,0 +1,40 @@
+# API Management instance acts as an Azure API gateway.
+# When you publish APIs you want to managed access to developers and consumers.
+# Why use APIM
+
+# Create an APi gateway
+# Deploy the ShoeCompany web API
+git clone https://github.com/Promise-Igbo/mslearn-publish-manage-apis-with-azure-api-management.git
+cd mslearn-publish-manage-apis-with-azure-api-management
+ls -l
+bash setup.sh
+
+# Create your APIM in same resource group, consumption tier works.
+# Making an API available starts with importing the API into API Management:
+# .Test out your API by using the visualization tools in the API gateway.
+# .Manage access to your APIs using policies.
+# To Import an API
+# API > Add API > OpenAPI> provide a link to your API specification as a URL or file, and a name for the API > Create
+https://shoecoapi860eed076e.azurewebsites.net/swagger/v1/swagger.json
+NorthWindShoes Products
+
+# Visualize the API
+# 1. issue a basic GET request, passing in a single parameter.
+# On the NorthWindShoes API > Test > Select the first GET operation,  Find the details of the specified product. The details appear in the test console > Template parameters, enter a numerical value for the product ID parameter (5) > note that the Request URL includes the /api/Products/{productid} suffix > Send 
+https://import-apim-0903.azure-api.net/api/Products/5
+# 2. Test using a basic GET request without any parameters.
+# Select the third GET operation, Retrieve the entire product inventory for the company, and make sure the Test tab is selected > note that the Request URL includes the /api/Inventory suffix > send.
+https://import-apim-0903.azure-api.net/api/Inventory
+
+# Call an API with a subscription key
+# A subscription key is one way to restrict access to an API.
+# Under APIs > Subscription > + Subscription > Name -NorthWind, Display name -NorthWind subscription > Scope	Select API, and then select NorthWindShoes Products > Create
+# Copy the primary key
+0f23acdba4fb424fa8c96dde7b3b602e
+
+# Use subscription key in API call
+# use the subscription key to test developer access to your published API.
+# Run on cloud shell
+curl https://import-apim-0903.azure-api.net/api/Products
+# You get a 401, Access denied due to missing subscription key message.
+curl --header "Ocp-Apim-Subscription-Key: 0f23acdba4fb424fa8c96dde7b3b602e" https://import-apim-0903.azure-api.net/api/Products

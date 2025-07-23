@@ -1,0 +1,103 @@
+# 2 Basic Methods to secure access
+Subscriptions
+Client certificates
+
+# Suppose you want your data available to clients who subscribe and pay for this service.
+# The critical requirement is to only allow access to clients who are allocated a key.
+# You'll use an API gateway to publish a RESTful API that exposes an OpenAPI endpoint.
+
+1. Subscriptions
+# Deploy the Weather Web API
+git clone https://github.com/Promise-Igbo/mslearn-control-authentication-with-apim.git
+cd mslearn-control-authentication-with-apim
+bash setup.sh
+
+# Deploy an API gateway (Consumption tier)
+# Resource name - apim-WeatherDataXXXX, Organization name - Weather-Company
+## Import the API
+# under APIs, select APIs > select OpenAPI > paste the Swagger JSON URL >  select Create.
+
+# Add a subscription key to access the Weather API
+# under APIs, select Subscriptions > Add subscription > Add details below > Create.
+# Name weather-data-subscription, Displayname Weather Data Subscription, Allowtracing No checkmark, Scope select API, API - Weather Data.
+# Copy the Primary key from Weather Data Subscription
+711771146fa049beba3e020abfb053c6
+
+# Test the subscription key
+curl -X GET https://apim-WeatherData0900.azure-api.net/api/Weather/53/-1
+curl -X GET https://apim-WeatherData0900.azure-api.net/api/Weather/53/-1 \
+  -H 'Ocp-Apim-Subscription-Key: 711771146fa049beba3e020abfb053c6'
+
+2. Client certificates
+# Certificates can be used to provide TLS mutual authentication between the client and the API gateway. 
+# In the Consumption tier, you must explicitly enable the use of client certificates, on the Custom domains pane unlike other tiers
+
+# Create self-signed certificate
+# To create the private key and the certificate, run the following commands in Cloud Shell.
+pwd='<Enter a secure password here>'
+pfxFilePath='selfsigncert.pfx'
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout privateKey.key -out selfsigncert.crt -subj /CN=localhost
+# That is
+pwd='Pa55word#990'
+pfxFilePath='selfsigncert.pfx'
+openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout privateKey.key -out selfsigncert.crt -subj /CN=localhost
+
+# convert the certificate to PEM format
+openssl pkcs12 -export -out $pfxFilePath -inkey privateKey.key -in selfsigncert.crt -password pass:$pwd
+openssl pkcs12 -in selfsigncert.pfx -out selfsigncert.pem -nodes
+
+# When you're prompted, enter your secure password, and then press Enter
+# In APIM, under Deployment and infrastructure, select Custom domains > For *Request client certificate, select Yes > Save
+
+# Get the thumbprint for the certificate
+# In Cloud Shell, run the following code.
+Fingerprint="$(openssl x509 -in selfsigncert.pem -noout -fingerprint)"
+Fingerprint="${Fingerprint//:}"
+echo ${Fingerprint#*=}
+# Copy and paste the output in a notepad
+8A9680855D225D1303663AA1A39EF453FCCDBFA9
+
+# Edit inbound policy to only allow requests with a valid certificate
+# under APIs, select APIs > select Weather Data > In the Inbound processing box, select the </> icon to open Policies code editor
+# Replace the <inbound> node of the policy file with the following XML
+<inbound>
+    <choose>
+        <when condition="@(context.Request.Certificate == null || context.Request.Certificate.Thumbprint != "desired-fingerprint")" >
+            <return-response>
+                <set-status code="403" reason="Invalid client certificate" />
+            </return-response>
+        </when>
+    </choose>
+    <base />
+</inbound>
+# substituting the fingerprint for the desired-fingerprint placeholder:
+<inbound>
+    <choose>
+        <when condition="@(context.Request.Certificate == null || context.Request.Certificate.Thumbprint != "8A9680855D225D1303663AA1A39EF453FCCDBFA9")" >
+            <return-response>
+                <set-status code="403" reason="Invalid client certificate" />
+            </return-response>
+        </when>
+    </choose>
+    <base />
+</inbound>
+# Save
+
+# Call the gateway and pass the client certificate
+# To test the API without the certificate, run the following command in Cloud Shell
+curl -X -v GET https://[api-gateway-name].azure-api.net/api/Weather/53/-1 \
+  -H 'Ocp-Apim-Subscription-Key: [Subscription Key]'
+# That is 
+curl -X -v GET https://apim-WeatherData0900.azure-api.net/api/Weather/53/-1 \
+  -H 'Ocp-Apim-Subscription-Key: 711771146fa049beba3e020abfb053c6'
+
+# test the API with the certificate
+curl -X GET https://[api-gateway-name].azure-api.net/api/Weather/53/-1 \
+  -H 'Ocp-Apim-Subscription-Key: [subscription-key]' \
+  --cert-type pem \
+  --cert selfsigncert.pem
+# That is
+curl -X GET https://apim-WeatherData0900.azure-api.net/api/Weather/53/-1 \
+  -H 'Ocp-Apim-Subscription-Key: 711771146fa049beba3e020abfb053c6' \
+  --cert-type pem \
+  --cert selfsigncert.pem

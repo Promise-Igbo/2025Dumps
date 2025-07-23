@@ -1,0 +1,77 @@
+# Create functions
+git clone https://github.com/MicrosoftDocs/mslearn-apim-and-functions.git
+cd mslearn-apim-and-functions
+bash setup.sh
+
+# The setup.sh script creates the two function app: OrderDetails and ProductDetails
+# The functions both have URLs in the azurewebsites.net domain.
+
+# On fuction app (ProductFunction) enable CORS under API 
+# Add https://portal.azure.com
+# Test the ProductDetails function
+# Select the Function App (ProductFunction) >  select ProductDetails > under Developer, select Code + Test > Test/Run
+# On the Input tab, in the HTTP method field dropdown list, select GET.
+# Under Query in the Name field, enter id, and in the Value field, enter 3. Then select Run.
+# The Output tab displays the HTTP response code (200 OK) and content for item 3 in the database.
+# Optionally, you can also test the function by inputting ID values 1 and 2.
+# Select Close to close the Input/Output tabs for Code + Test.
+# On the command bar of the ProductDetails Code + Test pane, select Get function URL.
+# The URL subdomain is the name of your function app, followed by the azurewebsites.net domain.
+
+
+# Expose function app as an API using Azure API Management
+# Select the ProductFunction function app > Under API, select API Management >  select Create new > Enter the following values
+# Subscription -Your Subscription, Resource group, Region, Resource name	OnlineStore, Organization name OnlineStore
+# Under Monitor + secure and clear the Application Insights option.
+# Makes sure it is consumption tier > Create
+# When instance is deployed, select Link API
+# Select Select to continue > Change the API URL suffix value to "products", and then select Create.
+
+# Test the OnlineStore products endpoint
+# Function app (ProductFunction) > API Management pane > select the Test tab > Select GET ProductDetails > Under Query parameters, select Add parameter.
+# In the NAME field, enter id, and in the VALUE field, enter 1, and then select Send to generate a GET request.
+# The request was sent to a destination in the azure-api.net domain. This location is different from the azurewebsites.net domain where the function app is hosted. 
+# You can test this API with other query parameters, such as id=2 or id=3.
+
+
+##  Test the OrderDetails function enable CORS under API 
+# Add https://portal.azure.com
+# select the Function App (OrderFunction) > select OrderDetails > On the Code + Test pane > select Test/Run
+# In the HTTP method field, select GET from the dropdown list.
+# Under Query in the Name field enter name. In the Value field, enter Chiba (value is case-sensitive) and then select Run.
+# Optionally, you can run more requests using name values Henri and Barriclough to obtain different customer orders.
+# Close the Input Output tabs for Test/Run.
+# select Get function URL. Notice that the URL is the name of the function within the azurewebsites.net domain.
+
+# Add a function to an existing API
+# Navigate to the API Management instance
+# under APIs, select APIs > Under Create from Azure resource, select Function App > select Browse > choose Select.
+# The Select Azure Function App pane appears > Select your OrderFunction, and then choose Select.
+# Ensure that OrderDetails is checked, and then at the bottom of the page choose Select to add the function.
+# Replace the value in the API URL suffix field with "orders" > Create
+
+# Test the OnlineStore orders endpoint in the portal
+# Still on API Management > APIs
+# On your OrderFunction APIs Design tab under All operations, select GET OrderDetails, and then select the Test tab.
+# In the Query parameters section, select Add parameter, and enter name in the NAME field and Chiba and in the VALUE field. Select Send.
+# Scroll up to the HTTP request section; notice that the request was sent to a subdomain and subdirectory within the azure-api.net domain. 
+# This location differs from the azurewebsites.net host domain.
+
+# Test the combined API
+# On the overview tab of the apim
+# Copy the Gateway URL
+https://onlinestore0.azure-api.net
+# Run on Cloud shell
+GATEWAY_URL=https://onlinestore0.azure-api.net
+# Go to API, and select Subscriptions.
+# For the Built-in all-access subscription, select the ellipsis ..., select Show/hide key, copy primary key
+# Run on cloud shell
+SUB_KEY=0a16c96ee8cf4b1ca7364ec620da56ef
+# Now we can request details of an order and a product by querying the same API Management service
+# a. To request details for a customer named Henri, run
+curl -X GET "$GATEWAY_URL/orders/OrderDetails?name=Henri" -H "Ocp-Apim-Subscription-Key:$SUB_KEY"
+# b. To request the details of a product with an id of 2, run
+curl -X GET "$GATEWAY_URL/products/ProductDetails?id=2" -H "Ocp-Apim-Subscription-Key:$SUB_KEY"
+
+# Both the functions can now be called through endpoints within the azure-api.net domain (as defined by the GATEWAY_URL), which is the domain used by Azure API Management.
+# A gateway provides you with a central control point, where you can manage multiple microservices without altering their code.
