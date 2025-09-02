@@ -9,22 +9,24 @@ namespaceName=eventhubsns$RANDOM
 # Azure Event Hubs namespace is a logical container for event hub resources within Azure
 # you can create one or more event hubs, which are used to ingest, process, and store large volumes of event data.
 az eventhubs namespace create --name $namespaceName --resource-group $resourceGroup -l $location
-az eventhubs eventhub create --name myEventHub --resource-group $resourceGroup `
+az eventhubs eventhub create --name myEventHub --resource-group $resourceGroup \
   --namespace-name $namespaceName
 
+echo $namespaceName
+
 # Assign a role to your Microsoft Entra user name
-userPrincipal=$(az rest --method GET --url https://graph.microsoft.com/v1.0/me `
-    --headers 'Content-Type=application/json' `
+userPrincipal=$(az rest --method GET --url https://graph.microsoft.com/v1.0/me \
+    --headers 'Content-Type=application/json' \
     --query userPrincipalName --output tsv)
 
 #  retrieve the resource ID of the Service Bus namespace
 # The resource ID sets the scope for the role assignment to a specific namespace.
-resourceID=$(az eventhubs namespace show --resource-group $resourceGroup `
+resourceID=$(az eventhubs namespace show --resource-group $resourceGroup \
     --name $namespaceName --query id --output tsv)
 
 # to create and assign the Azure Event Hubs Data Owner role, which gives you permission to send and retrieve events.
-az role assignment create --assignee $userPrincipal `
-    --role "Azure Event Hubs Data Owner" `
+az role assignment create --assignee $userPrincipal \
+    --role "Azure Event Hubs Data Owner" \
     --scope $resourceID
 
 

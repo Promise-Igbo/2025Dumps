@@ -1,0 +1,82 @@
+# Import the sample app to your GitHub repository
+https://github.com/new/import
+# Enter the following information in the Import your project to GitHub page.
+# The URL for your source repository	Enter 
+https://github.com/MicrosoftLearning/azure-load-test-sample-app
+# Owner:	Select your GitHub alias
+# Repository name:	Name your repository
+# Privacy:	After selecting the Owner the privacy options will appear. Select Public.
+
+# Select Begin import and wait for the import process to complete
+# On the new repository page select Settings, then select Actions > General in the left navigation pane.
+# In the Actions permissions section of the page select the Allow all actions and reusable workflows option, and then select Save.
+
+# Create resources in Azure
+# Enter env variables
+myLocation=<mylocation>
+myAppName=az2006app$RANDOM
+
+az group create -n az2006-rg -l $myLocation
+az appservice plan create -g az2006-rg -n az2006webapp-plan --sku B1
+az webapp create -g az2006-rg -p az2006webapp-plan -n $myAppName --runtime "dotnet:8"
+az load create -n az2006loadtest -g az2006-rg --location $myLocation
+
+# Copy and save your subscription id
+subId=$(az account list --query "[?isDefault].id" --output tsv)
+echo $subId
+
+# Create a service pricipal if you don't have any and connect to Github or Add your service principal on GitHub secrets.
+# On Entra id, select App registrations in the Manage group.
+# Select + New registration in the main panel and enter GH-Action-webapp as the name, and then select Register.
+# Copy and save both the Application (client) ID and Directory (tenant) ID values for later in this lab
+# Application (client) ID: 84492660-4e68-4ed9-ad6d-730b92b52612
+# Directory (tenant) ID: 8fb09f74-3484-43b5-b8d7-9fb531808011
+# In the left navigation pane select Certificates & secrets in the Manage group
+#  then in the main window select Federated credentials.
+# Select Add a credential and then select GitHub Actions deploying Azure resources in the selection drop down.
+# Enter the following information in the Connect your GitHub account section. (Case sentitve)
+# Organization:	Enter your user or organization name. (PLS-Github-Actions)
+# Repository:	Enter the name of the repository you created earlier in the lab. (loadTesting)
+# Entity type:	Select Branch.
+# GitHub branch name:	Enter main.
+# In the Credential details section give your credential a name (LoadTesting) and then select Add.
+
+# Assign roles to the service principal
+spAppId=$(az ad sp list --display-name GH-Action-webapp --query "[].{spID:appId}" --output tsv)
+
+loadTestId=$(az resource show -g az2006-rg -n az2006loadtest --resource-type "Microsoft.LoadTestService/loadtests" --query "id" -o tsv)
+
+az role assignment create --assignee $spAppId --role "Load Test Contributor"  --scope $loadTestId
+
+rgId=$(az group show -n az2006-rg --query "id" -o tsv)
+
+az role assignment create --assignee $spAppId --role contributor --scope $rgId
+
+# Deploy and test the web app using GitHub Actions
+# Configure secrets
+# In the Secrets and variables of GitHub, and then select Actions.
+# AZURE_CLIENT_ID:	Enter the Application (client) ID you saved earlier in the lab.
+# AZURE_TENANT_ID:	Enter the Directory (tenant) ID you saved earlier in the lab.
+# AZURE_SUBSCRIPTION_ID:	Enter the subscription id value you saved earlier in the lab.
+
+# Deploy the web app
+# Select the deploy.yml file in the .github/workflows folder.
+# Edit the file and, in the env: section, change the value of the AZURE_WEB_APP variable. Replace <your web app name> with the name of web app created earlier and commit.
+# Select Actions > Select Build and publish > Select the Run workflow drop down and select Run workflow keeping the default Branch: main setting (workflow might take a little time to start)
+
+# Run a load test
+# Select the loadtest.yml file in the .github/workflows folder.
+# Edit the file and, in the env: section, change the value of the AZURE_WEB_APP variable. Replace <your web app name>** with the name of web app created earlier and commit.
+# Select Actions > Select Load test > Select the Run workflow drop down and select Run workflow keeping the default Branch: main setting (workflow might take a little time to start).
+
+
+# The config.yaml file in the root of the repository specifies the failure criteria for the load test.
+# If you want to force the load test to fail perform the following steps.
+# Edit the config.yaml file located in the root of the repository.
+# Change the value in the - p90(response_time_ms) > 4000 field to a low value.
+# (Changing it to - p90(response_time_ms) > 50 will most likely cause the test to fail. That represents the app will respond within 50ms 90% of the time.)
+
+# View load test results
+# In CI/CD pipeline, you can view the summary results directly in the CI/CD output log because the test results were saved as a pipeline artifact, you can also download a CSV file for further reporting.
+
+# az group delete -n az2006-rg --no-wait --yes

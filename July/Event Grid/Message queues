@@ -1,0 +1,330 @@
+# Azure supports two types of queue mechanisms: Service Bus queues and Storage queues.
+# 1. Azure Service Bus
+az group create --name myResourceGroup --location eastus
+
+resourceGroup=myResourceGroup
+location=eastus
+namespaceName=svcbusns$RANDOM
+
+echo $namespaceName
+svcbusns11136
+
+# Create an Azure Service Bus namespace and queue
+az servicebus namespace create \
+    --resource-group $resourceGroup \
+    --name $namespaceName \
+    --location $location
+
+az servicebus queue create --resource-group $resourceGroup \
+    --namespace-name $namespaceName \
+    --name myqueue
+
+# Assign a role to your Microsoft Entra user name
+userPrincipal=$(az rest --method GET --url https://graph.microsoft.com/v1.0/me \
+    --headers 'Content-Type=application/json' \
+    --query userPrincipalName --output tsv)
+
+resourceID=$(az servicebus namespace show --name $namespaceName \
+    --resource-group $resourceGroup \
+    --query id --output tsv)
+
+#  assign the Azure Service Bus Data Owner role
+az role assignment create --assignee $userPrincipal \
+    --role "Azure Service Bus Data Owner" \
+    --scope $resourceID
+
+# Create a .NET console app to send and receive messages
+mkdir svcbus
+cd svcbus
+
+dotnet new console
+
+dotnet add package Azure.Messaging.ServiceBus
+dotnet add package Azure.Identity
+
+# Add the starter code for the project
+code Program.cs
+
+# Replace any existing contents with the following code.
+using Azure.Messaging.ServiceBus;
+using Azure.Identity;
+using System.Timers;
+
+
+// TODO: Replace <YOUR-NAMESPACE> with your Service Bus namespace
+string svcbusNameSpace = "<YOUR-NAMESPACE>.servicebus.windows.net";
+string queueName = "myQueue";
+
+
+// ADD CODE TO CREATE A SERVICE BUS CLIENT
+// Create a DefaultAzureCredentialOptions object to configure the DefaultAzureCredential
+DefaultAzureCredentialOptions options = new()
+{
+    ExcludeEnvironmentCredential = true,
+    ExcludeManagedIdentityCredential = true
+};
+
+// Create a Service Bus client using the namespace and DefaultAzureCredential
+// The DefaultAzureCredential will use the Azure CLI credentials, so ensure you are logged in
+ServiceBusClient client = new(svcbusNameSpace, new DefaultAzureCredential(options));
+
+
+
+// ADD CODE TO SEND MESSAGES TO THE QUEUE
+// Create a sender for the specified queue
+ServiceBusSender sender = client.CreateSender(queueName);
+
+// create a batch 
+using ServiceBusMessageBatch messageBatch = await sender.CreateMessageBatchAsync();
+
+// number of messages to be sent to the queue
+const int numOfMessages = 3;
+
+for (int i = 1; i <= numOfMessages; i++)
+{
+    // try adding a message to the batch
+    if (!messageBatch.TryAddMessage(new ServiceBusMessage($"Message {i}")))
+    {
+        // if it is too large for the batch
+        throw new Exception($"The message {i} is too large to fit in the batch.");
+    }
+}
+
+try
+{
+    // Use the producer client to send the batch of messages to the Service Bus queue
+    await sender.SendMessagesAsync(messageBatch);
+    Console.WriteLine($"A batch of {numOfMessages} messages has been published to the queue.");
+}
+finally
+{
+    // Calling DisposeAsync on client types is required to ensure that network
+    // resources and other unmanaged objects are properly cleaned up.
+    await sender.DisposeAsync();
+}
+
+Console.WriteLine("Press any key to continue");
+Console.ReadKey();
+
+
+// ADD CODE TO PROCESS MESSAGES FROM THE QUEUE
+// Create a processor that we can use to process the messages in the queue
+ServiceBusProcessor processor = client.CreateProcessor(queueName, new ServiceBusProcessorOptions());
+
+// Idle timeout in milliseconds, the idle timer will stop the processor if there are no more 
+// messages in the queue to process
+const int idleTimeoutMs = 3000;
+System.Timers.Timer idleTimer = new(idleTimeoutMs);
+idleTimer.Elapsed += async (s, e) =>
+{
+    Console.WriteLine($"No messages received for {idleTimeoutMs / 1000} seconds. Stopping processor...");
+    await processor.StopProcessingAsync();
+};
+
+try
+{
+    // add handler to process messages
+    processor.ProcessMessageAsync += MessageHandler;
+
+    // add handler to process any errors
+    processor.ProcessErrorAsync += ErrorHandler;
+
+    // start processing 
+    idleTimer.Start();
+    await processor.StartProcessingAsync();
+
+    Console.WriteLine($"Processor started. Will stop after {idleTimeoutMs / 1000} seconds of inactivity.");
+    // Wait for the processor to stop
+    while (processor.IsProcessing)
+    {
+        await Task.Delay(500);
+    }
+    idleTimer.Stop();
+    Console.WriteLine("Stopped receiving messages");
+}
+finally
+{
+    // Dispose processor after use
+    await processor.DisposeAsync();
+}
+
+// handle received messages
+async Task MessageHandler(ProcessMessageEventArgs args)
+{
+    string body = args.Message.Body.ToString();
+    Console.WriteLine($"Received: {body}");
+
+    // Reset the idle timer on each message
+    idleTimer.Stop();
+    idleTimer.Start();
+
+    // complete the message. message is deleted from the queue. 
+    await args.CompleteMessageAsync(args.Message);
+}
+
+// handle any errors when receiving messages
+Task ErrorHandler(ProcessErrorEventArgs args)
+{
+    Console.WriteLine(args.Exception.ToString());
+    return Task.CompletedTask;
+}
+
+
+// Dispose client after use
+await client.DisposeAsync();
+
+# save
+
+# Sign into Azure and run the app
+az login
+dotnet run
+
+# In the Azure portal, navigate to the Service Bus namespace you created.
+# Select myqueue > Select Service Bus Explorer > Select Peek from start and the three messages should appear after a few seconds.
+# In the cloud shell, press any key to continue and the application will process the three message.
+# Return to the portal and Select Peek from start again and notice there are no messages in the queue.
+
+
+# 2. Azure Storage Queues
+# Send and receive messages from Azure Queue storage
+az group create --name myResourceGroup --location eastus
+
+resourceGroup=myResourceGroup
+location=eastus
+storAcctName=storactname$RANDOM
+
+echo $storAcctName
+
+# create a storage account
+az storage account create --resource-group $resourceGroup \
+    --name $storAcctName --location $location --sku Standard_LRS
+
+# retrieve the userPrincipalName from your account.
+userPrincipal=$(az rest --method GET --url https://graph.microsoft.com/v1.0/me \
+    --headers 'Content-Type=application/json' \
+    --query userPrincipalName --output tsv)
+
+# retrieve the resource ID of the storage account.
+resourceID=$(az storage account show --resource-group $resourceGroup \
+    --name $storAcctName --query id --output tsv)
+
+# create and assign the Storage Queue Data Contributor role.
+az role assignment create --assignee $userPrincipal \
+    --role "Storage Queue Data Contributor" \
+    --scope $resourceID
+
+# Create a .NET console app to send and receive messages
+mkdir queuestor
+cd queuestor
+
+dotnet new console
+
+dotnet add package Azure.Storage.Queues
+dotnet add package Azure.Identity
+
+# Add the starter code for the project
+code Program.cs
+
+# Replace any existing contents with the following code.
+using Azure;
+using Azure.Identity;
+using Azure.Storage.Queues;
+using Azure.Storage.Queues.Models;
+using System;
+using System.Threading.Tasks;
+
+// Create a unique name for the queue
+// TODO: Replace the <YOUR-STORAGE-ACCT-NAME> placeholder 
+string queueName = "myqueue-" + Guid.NewGuid().ToString();
+string storageAccountName = "<YOUR-STORAGE-ACCT-NAME>";
+
+// ADD CODE TO CREATE A QUEUE CLIENT AND CREATE A QUEUE
+// Create a DefaultAzureCredentialOptions object to exclude certain credentials
+DefaultAzureCredentialOptions options = new()
+{
+    ExcludeEnvironmentCredential = true,
+    ExcludeManagedIdentityCredential = true
+};
+
+// Instantiate a QueueClient to create and interact with the queue
+QueueClient queueClient = new QueueClient(
+    new Uri($"https://{storageAccountName}.queue.core.windows.net/{queueName}"),
+    new DefaultAzureCredential(options));
+
+Console.WriteLine($"Creating queue: {queueName}");
+
+// Create the queue
+await queueClient.CreateAsync();
+
+Console.WriteLine("Queue created, press Enter to add messages to the queue...");
+Console.ReadLine();
+
+
+
+// ADD CODE TO SEND AND LIST MESSAGES
+// Send several messages to the queue with the SendMessageAsync method.
+await queueClient.SendMessageAsync("Message 1");
+await queueClient.SendMessageAsync("Message 2");
+
+// Send a message and save the receipt for later use
+SendReceipt receipt = await queueClient.SendMessageAsync("Message 3");
+
+Console.WriteLine("Messages added to the queue. Press Enter to peek at the messages...");
+Console.ReadLine();
+
+// Peeking messages lets you view the messages without removing them from the queue.
+
+foreach (var message in (await queueClient.PeekMessagesAsync(maxMessages: 10)).Value)
+{
+    Console.WriteLine($"Message: {message.MessageText}");
+}
+
+Console.WriteLine("\nPress Enter to update a message in the queue...");
+Console.ReadLine();
+
+
+// ADD CODE TO UPDATE A MESSAGE AND LIST MESSAGES
+// Update a message with the UpdateMessageAsync method and the saved receipt
+await queueClient.UpdateMessageAsync(receipt.MessageId, receipt.PopReceipt, "Message 3 has been updated");
+
+Console.WriteLine("Message three updated. Press Enter to peek at the messages again...");
+Console.ReadLine();
+
+
+// Peek messages from the queue to compare updated content
+foreach (var message in (await queueClient.PeekMessagesAsync(maxMessages: 10)).Value)
+{
+    Console.WriteLine($"Message: {message.MessageText}");
+}
+
+Console.WriteLine("\nPress Enter to delete messages from the queue...");
+Console.ReadLine();
+
+
+// ADD CODE TO DELETE MESSAGES AND THE QUEUE
+// Delete messages from the queue with the DeleteMessagesAsync method.
+foreach (var message in (await queueClient.ReceiveMessagesAsync(maxMessages: 10)).Value)
+{
+    // "Process" the message
+    Console.WriteLine($"Deleting message: {message.MessageText}");
+
+    // Let the service know we're finished with the message and it can be safely deleted.
+    await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+}
+Console.WriteLine("Messages deleted from the queue.");
+Console.WriteLine("\nPress Enter key to delete the queue...");
+Console.ReadLine();
+
+// Delete the queue with the DeleteAsync method.
+Console.WriteLine($"Deleting queue: {queueClient.Name}");
+await queueClient.DeleteAsync();
+
+Console.WriteLine("Done");
+
+# Save
+
+# Sign into Azure and run the app
+az login
+dotnet run
+
+# On the storage account, select Queues > you can view the sent Messages and and monitor what the application is doing.

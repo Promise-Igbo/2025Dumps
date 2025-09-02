@@ -55,7 +55,7 @@ bash setup.sh
 # In the Inbound processing section, select the </> icon. The XML policy editor appears.
 # Replace the entire <inbound> element with the following code:
 <inbound>
-    <rate-limit calls="3" renewal-period="15" />
+    <rate-limit calls="3" renewal-period="15" @context.Subscription.Id />
     <base />
 </inbound>
 # Save
