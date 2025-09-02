@@ -60,7 +60,7 @@ dotnet add package dotenv.net
 az eventgrid topic show --name $topicName -g $resourceGroup --query "endpoint" --output tsv
 # https://mytopic-evgtopic-10599.eastus-1.eventgrid.azure.net/api/events
 az eventgrid topic key list --name $topicName -g $resourceGroup --query "key1" --output tsv
-# AjNtKPb0TljZ8Qc1wMyjK3NuzkpXQ0NbaN35fxCeRr3s73PQ9mAEJQQJ99BGACYeBjFXJ3w3AAABAZEGMnJv
+# save the output
 
 # create the .env file to hold the secrets
 touch .env
@@ -70,7 +70,7 @@ TOPIC_ENDPOINT="YOUR_TOPIC_ENDPOINT"
 TOPIC_ACCESS_KEY="YOUR_TOPIC_ACCESS_KEY"
 # i.e
 TOPIC_ENDPOINT="https://mytopic-evgtopic-10599.eastus-1.eventgrid.azure.net/api/events"
-TOPIC_ACCESS_KEY="AjNtKPb0TljZ8Qc1wMyjK3NuzkpXQ0NbaN35fxCeRr3s73PQ9mAEJQQJ99BGACYeBjFXJ3w3AAABAZEGMnJv"
+TOPIC_ACCESS_KEY="<Use the output saved earlier>"
 
 # Save the .env file and close it.
 
