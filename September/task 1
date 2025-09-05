@@ -1,1 +1,59 @@
-## How to build a Fraud Detection System using Redis
+## Building a Remote MCP Server on Azure App Service
+# MCP (Model Context Protocol) servers are part of a rapidly evolving technology used for hosting and managing model-based contexts. These servers interact with clients like GitHub Copilot in VS Code, offering advanced features and enriching the functionality of large language models (LLMs). 
+
+# https://github.com/Azure-Samples/remote-mcp-webapp-dotnet
+
+# Prerequisite
+# .Net 9 SDK
+# Navigate into the src folder and run the MCP C# SDK
+# MCP C# SDK: dotnet add package ModelContextProtocol --prerelease
+
+# Run server locally
+dotnet restore mcp-csharp-sdk.sln
+dotnet run --project McpServer.csproj
+# MCP server will be available at http://localhost:5000
+# Open VSCode Command Pallette: Ctrl + Shift + P
+# Add MCP Server > Put the URL > Choose the workspace to run it
+# open Copilot Chat > Agent Mode (to access MCP servers) > Ask questions like
+# “Use the multiplication tool to multiply 7 by 8.”
+# “Convert 100 Celsius to Fahrenheit.”
+# “What’s the weather in London?”
+
+# Ctrl+C in the terminal to stop the app
+# Note: This project is an MCP JSON-RPC server, not a web API designed for browsers.
+
+
+# Using MCP Inspector
+# Keep your server running in one terminal
+dotnet restore mcp-csharp-sdk.sln
+dotnet run --project McpServer.csproj
+# In a new terminal window, install and run MCP Inspector (Note: you must not be on the src/)
+npx @modelcontextprotocol/inspector
+# enter the URL of your running server
+http://localhost:5000
+# List Tools, click on a tool, and Run Tool
+
+# Deploy to Azure
+azd auth login
+# Enter your environment name
+azd env new
+# Deploy using Bicep script on the repo
+azd up
+
+# The Bicep script will
+# Build the .NET application
+# Provision Azure resources defined in the Bicep templates
+# Deploy the application to Azure App Service
+
+# Connect to Remote MCP Server
+# Using MCP Inspector
+npm install -g @modelcontextprotocol/inspector
+mcp-inspector
+# Transport Type: Streamable HTTP
+# Server URL is the App service URL
+https://app-tyew34lqnhtp6.azurewebsites.net/
+# Connect
+# You can lsit tools ot test connection
+
+# Clean up resources
+azd down

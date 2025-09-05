@@ -1,0 +1,13 @@
+{
+	"servers": {
+		"http://localhost:5000": {
+			"url": "http://localhost:5000",
+			"type": "http"
+		},x
+		"https://app-tyew34lqnhtp6.azurewebsites.net/": {
+			"url": "https://app-tyew34lqnhtp6.azurewebsites.net/",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
