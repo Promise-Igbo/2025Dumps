@@ -1,0 +1,53 @@
+## Host remote MCP servers in Azure Container Apps
+# Building a remote MCP server using SSE transport and API key auth
+# clone repo
+git clone https://github.com/anthonychu/azure-container-apps-mcp-sample.git
+
+# weather.py exposes a simple tool for getting the weather in a given location in the United States. It runs locally and communicates with the host using standard input/output.
+
+# We have a FastAPI server that exposes the /sse endpoint and handles the /messages endpoint using the MCP SDK.
+
+# Prerequisites:
+# Python 3.11 or later
+# Install uv
+pip install uv
+(This will propel you to use a virtual environment) (Choose Global to prevent the * stages)
+
+# Run the server locally
+python -m uv venv
+# Activate your venv before installing/syncing
+.venv\Scripts\activate
+python -m pip install uv  *
+python -m ensurepip --upgrade  *
+python -m pip install --upgrade pip  *
+python -m pip install uv  *
+cd azure-container-apps-mcp-sample
+python -m uv sync
+
+# To use a real API service, sign up for a weather API like weatherapi.com or OpenWeatherMap and get an API key.
+# I will use a fake one for testing e.g test123
+set API_KEYS=<AN_API_KEY>
+# ie set API_KEYS=test123 or $env:API_KEYS = "test123"
+echo $env:API_KEYS
+python -m uv run fastapi dev main.py
+
+# To stop
+Ctrl + C
+
+# Deploy to Azure Container Apps
+$RESOURCE_GROUP_NAME = "promacarg"
+$AN_API_KEY = "test123"
+
+az containerapp up -g $RESOURCE_GROUP_NAME -n weather-mcp --environment mcp -l centralus `
+    --env-vars API_KEYS=$AN_API_KEY --source .
+
+# make sure you are in the azure-container-apps-mcp-sample where the bicep scipt is
+# use the URL to connect to the server from Visual Studio Code.
+
+# Create an mcp.json for VS Code
+
+# Ctrl + shift + P > MCP: Start Session > Enter your API key for the MCP server (test123)
+# If the key is valid and the URL is correct, VS Code will start receiving SSE messages from your server.
+# Make sure your Azure Container App ingress is set to External so VS Code can reach it.
+# If you change the API key in Azure, update it in VS Code when prompted.
+# You can have multiple servers in mcp.json if needed; just add more entries under "servers".
