@@ -1,0 +1,22 @@
+## Build a REST API using Spring Boot with the help of GitHub Copilot
+
+# Download the software packages
+https://aka.ms/download-jdk/microsoft-jdk-17.0.12-windows-x64.msi
+https://downloads.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip
+
+# Install microsoft JDK
+# Install apache- maven > Extract All > Setup Environmental variables 
+# Click New under User variable for Admin section.
+# Variable name:JAVA_HOME
+# Variable value:C:\Program Files\Java\jdk1.8.0_271
+# select Path and click Edit under User variable for Admin section > New
+# %JAVA_HOME%\bin
+
+# set up the environment and path variables for Maven.
+# select New under User variable for Admin section
+# Variable name: MAVEN_HOME
+# Variable value: C:\Users\Admin\Downloads\apache-maven-3.9.11
+# select Path and click Edit > New
+# %MAVEN_HOME%\bin
+
+# Create the code to handle a simple GET request

@@ -1,0 +1,110 @@
+## Creating an IAM user
+IAM > Users > Create Users
+    -User name: Admin
+	-Select AWS credential type:
+	-Access key - Programmatic access
+	-Password - AWS Management Console access
+	-Console password: Custom password and enter a password of your choosing
+	-Require password reset: Clear this option
+> Permissions > choose Attach existing policies directly > In the Filter policies box, search for administrator >
+select AdministratorAccess > Review and Create users
+# sign in with the new IAM admin user by choosing the URL at the bottom of the Success window.
+# The sign-in URL should look like the following: https://123456789012.signin.aws.amazon.com/console.
+# Log in to the console with the Admin user and password that you created.
+
+https://050451377630.signin.aws.amazon.com/console
+Password: Password@123
+
+## Set up an IAM role for an EC2 instance.txt
+# log in as Admin user 
+# IAM > Roles > Create role > 
+# In the Select trusted entity page, configure the following settings.
+#	-Trusted entity type: AWS service
+#	-Use case: EC2
+
+# Choose Next > permissions filter box, select AmazonS3FullAccess and AmazonDynamoDBFullAccess
+# Role name, use S3DynamoDBFullAccessRole and choose Create role.
+
+## Launching an Viewing an EC2 Instance.txt
+# log in to the AWS Management Console as your Admin user.
+# EC2 > Instances > Launch instances 
+# Name: employee-directory-app
+# Under Application and OS Images (Amazon Machine Image), choose Amazon Linux.
+# Instance type, select t2.micro.
+# Under Key pair (login), choose Create a new key pair.
+# Key pair name: app-key-pair. Choose Create key pair. The required .pem file should automatically download
+# Under Network settings and Edit: Keep the default VPC selection, which should have (default) after the network name
+#	-Subnet: Choose the first subnet in the dropdown list
+#	-Auto-assign Public IP: Enable
+# Under Firewall (security groups) choose Create security group.
+# Security group and Description: app-sg
+# Under Inbound security groups rules choose Remove above the ssh rule.
+# Choose Add security group rule. For Type choose HTTP. Under Source type choose Anywhere.
+# Expand Advanced details and under IAM instance profile choose S3DynamoDBFullAccessRole.
+# In the User data box, paste the following code:
+#!/bin/bash -ex
+wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip
+unzip FlaskApp.zip
+cd FlaskApp/
+yum -y install python3 mysql
+pip3 install -r requirements.txt
+amazon-linux-extras install epel
+yum -y install stress
+export PHOTOS_BUCKET=${SUB_PHOTOS_BUCKET}
+export AWS_DEFAULT_REGION=<INSERT REGION HERE>
+export DYNAMO_MODE=on
+FLASK_APP=application.py /usr/local/bin/flask run --host=0.0.0.0 --port=80
+
+# Take note of - export AWS_DEFAULT_REGION=<INSERT REGION HERE> to insert region
+# Choose Launch instance
+# Choose View all instances.
+# Instance state to change to Running and the Status check to change to 2/2 checks passed.
+# To view the application, Select the instance by selecting its check box.
+# copy the Public IPv4 address.
+# Employee Directory placeholder can be seen. Right now, you won’t be able to interact with it yet because the application isn’t connected to a database.
+
+#!/bin/bash -ex
+cd /home/ec2-user
+
+wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip
+unzip FlaskApp.zip
+cd FlaskApp/
+
+yum -y install python3 mysql unzip
+/usr/bin/pip3 install --upgrade pip
+/usr/bin/pip3 install -r requirements.txt
+
+amazon-linux-extras enable epel
+yum -y install epel-release stress
+
+echo "export PHOTOS_BUCKET=\${SUB_PHOTOS_BUCKET}" >> /etc/profile.d/flaskenv.sh
+echo "export AWS_DEFAULT_REGION=us-east-1" >> /etc/profile.d/flaskenv.sh
+echo "export DYNAMO_MODE=on" >> /etc/profile.d/flaskenv.sh
+source /etc/profile.d/flaskenv.sh
+
+FLASK_APP=application.py nohup /usr/local/bin/flask run --host=0.0.0.0 --port=80 > /var/log/flask.log 2>&1 &
+
+
+
+## Creating a VPC.txt
+# 
+
+#!/bin/bash -ex
+cd /home/ec2-user
+
+dnf -y install python3.9 unzip mysql wget stress
+
+wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/DEV-AWS-MO-GCNv2/FlaskApp.zip
+unzip -o FlaskApp.zip
+cd FlaskApp/
+
+/usr/bin/pip3.9 install --upgrade pip
+/usr/bin/pip3.9 install -r requirements.txt
+
+cat <<EOF > /etc/profile.d/flaskenv.sh
+export PHOTOS_BUCKET=\${SUB_PHOTOS_BUCKET}
+export AWS_DEFAULT_REGION=us-east-1
+export DYNAMO_MODE=on
+EOF
+
+FLASK_APP=application.py nohup /usr/bin/flask run --host=0.0.0.0 --port=80 > /var/log/flask.log 2>&1 &

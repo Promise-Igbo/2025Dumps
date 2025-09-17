@@ -1,0 +1,145 @@
+# Build a chatbot with Azure App Service and Azure OpenAI (.NET)
+
+## Create an Azure OpenAI resource
+# sign in to https://github.com/codespaces
+# Find the Blank template by GitHub and select Use this template to create a new blank Codespace.
+# In the Codespace terminal, install the Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az login
+
+# Set environment variables for your resource group name, Azure OpenAI service name, and location
+export RESOURCE_GROUP="promgroupz"
+export OPENAI_SERVICE_NAME="promopenaiz"
+export APPSERVICE_NAME="promappz"
+export LOCATION="eastus2"
+
+# This tutorial uses gpt-4o-mini, which is available in eastus2 under the Standard deployment type.
+# Before changing regions, consult the Model summary table and region availability to verify model support in your preferred region.
+
+# Create a resource group and an Azure OpenAI resource with a custom domain, then add a gpt-4o-mini model
+# Resource group
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
+# Azure OpenAI resource
+az cognitiveservices account create --name $OPENAI_SERVICE_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --custom-domain $OPENAI_SERVICE_NAME --kind OpenAI --sku s0
+
+# gpt-4o-mini model
+az cognitiveservices account deployment create --name $OPENAI_SERVICE_NAME --resource-group $RESOURCE_GROUP --deployment-name gpt-4o-mini --model-name gpt-4o-mini --model-version 2024-07-18 --model-format OpenAI --sku-name Standard --sku-capacity 1
+
+# Cognitive Services OpenAI User role that lets the signed in Azure user to read models from Azure OpenAI
+az role assignment create --assignee $(az ad signed-in-user show --query id -o tsv) --role "Cognitive Services OpenAI User" --scope /subscriptions/$(az account show --query id -o tsv)/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$OPENAI_SERVICE_NAME
+
+# Create and set up a Blazor web app
+# In your Codespace terminal, create a new Blazor app and try running it for the first time.
+dotnet new blazor -o .
+dotnet run
+
+# notification in GitHub Codespaces indicating that the app is available at a specific port.
+# Select Open in browser to launch the app 
+
+# Back in the Codespace terminal, stop the app with Ctrl+C.
+# Install the required NuGet packages for working with Azure OpenAI
+dotnet add package Azure.AI.OpenAI
+dotnet add package Azure.Identity
+
+# Open Components/Pages/Home.razor and replace its content with the following code, for a simple chat completion stream call with Azure OpenAI
+@page "/"
+@rendermode InteractiveServer
+@using Azure.AI.OpenAI
+@using Azure.Identity
+@using OpenAI.Chat
+@inject Microsoft.Extensions.Configuration.IConfiguration _config
+
+<h3>Azure OpenAI Chat</h3>
+<div class="mb-3 d-flex align-items-center" style="margin:auto;">
+    <input class="form-control me-2" @bind="userMessage" placeholder="Type your message..." />
+    <button class="btn btn-primary" @onclick="SendMessage">Send</button>
+</div>
+<div class="card p-3" style="margin:auto;">
+    @if (!string.IsNullOrEmpty(aiResponse))
+    {
+        <div class="alert alert-info mt-3 mb-0">@aiResponse</div>
+    }
+</div>
+
+@code {
+    private string? userMessage;
+    private string? aiResponse;
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userMessage)) return;
+
+        // Initialize the Azure OpenAI client
+        var endpoint = new Uri(_config["AZURE_OPENAI_ENDPOINT"]!);
+        var client = new AzureOpenAIClient(endpoint, new DefaultAzureCredential());
+        var chatClient = client.GetChatClient("gpt-4o-mini");
+
+        aiResponse = string.Empty;
+        StateHasChanged();
+
+        // Create a chat completion streaming request
+        var chatUpdates = chatClient.CompleteChatStreamingAsync(
+            [
+                new UserChatMessage(userMessage)
+            ]);
+
+            await foreach(var chatUpdate in chatUpdates)
+            {
+                // Update the UI with the streaming response
+                foreach(var contentPart in chatUpdate.ContentUpdate)
+            {
+                aiResponse += contentPart.Text;
+                StateHasChanged();
+            }
+        }
+    }
+}
+
+# In the terminal, retrieve your OpenAI endpoint
+az cognitiveservices account show \
+  --name $OPENAI_SERVICE_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query properties.endpoint \
+  --output tsv
+
+# This is my endpoint: https://promopenaiz.openai.azure.com/
+# Run the app again by adding AZURE_OPENAI_ENDPOINT with its value from the CLI output
+# AZURE_OPENAI_ENDPOINT=<output-from-previous-cli-command> dotnet run
+AZURE_OPENAI_ENDPOINT=https://promopenaiz.openai.azure.com/ dotnet run
+
+# Select Open in browser to launch the app in a new browser tab
+# Type a message in the textbox and select "Send, and give the app a few seconds to reply with the message from Azure OpenAI
+
+# The application uses DefaultAzureCredential, which automatically uses your Azure CLI signed in user for token authentication.
+
+# Deploy to Azure App Service and configure OpenAI connection
+az webapp up \
+  --resource-group $RESOURCE_GROUP \
+  --location $LOCATION \
+  --name $APPSERVICE_NAME \
+  --plan $APPSERVICE_NAME \
+  --sku B1 \
+  --os-type Linux \
+  --track-status false
+
+# create a service connection between your web app and the Azure OpenAI resource using managed identity
+az webapp connection create cognitiveservices \
+  --resource-group $RESOURCE_GROUP \
+  --name $APPSERVICE_NAME \
+  --target-resource-group $RESOURCE_GROUP \
+  --account $OPENAI_SERVICE_NAME
+  --connection azure-openai \
+  --system-identity
+
+# This command Generating system-assigned managed identity for the web app,
+# Adding the Cognitive Services OpenAI Contributor role to the managed identity for the Azure OpenAI resource and
+# Adding the AZURE_OPENAI_ENDPOINT app setting to your web app.
+
+# The app reads the AZURE_OPENAI_ENDPOINT app setting through the IConfiguration injection
+
+# Open the deployed web app in the browser.
+# Find the URL of the deployed web app in the terminal output. Open your web browser and navigate to it
+az webapp browse
+
+# Type a message in the textbox and select "Send, and give the app a few seconds to reply with the message from Azure OpenAI
