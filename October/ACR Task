@@ -1,0 +1,37 @@
+## Run an ACR task on a defined schedule
+# Scheduling a task is useful for scenarios like the following:
+ # Run a container workload for scheduled maintenance operations. For example, run a containerized app to remove unneeded images from your registry.
+ # Run a set of tests on a production image during the workday as part of your live-site monitoring.
+
+# Create a task with a timer trigger
+ # Create container registry
+az acr task create --name timertask --registry acrpromiz --cmd mcr.microsoft.com/hello-world --schedule "0 21 * * *" --context /dev/null
+
+ # to see that the timer trigger is configured
+az acr task show --name timertask --registry acrpromiz --output table
+ # This task triggers running the hello-world image from Microsoft Container Registry every day at 21:00 UTC.
+
+ # to build the source code context and then create a scheduled task with context.
+ # Generate PAT
+az acr task create --name timertask --registry acrpromiz --context https://github.com/Promise-Igbo/acr-build-helloworld-node.git#master --file Dockerfile --image timertask:{{.Run.ID}} --git-access-token $GIT_PAT --schedule "0 21 * * *" 
+
+ # to see that the timer trigger is configured
+az acr task show --name timertask --registry acrpromiz --output table
+ # to trigger the task manually
+az acr task run --name timertask --registry acrpromiz
+
+# to verify that the timer triggered the task as expected
+az acr task list-runs --name timertask --registry acrpromiz --output table
+
+## Manage timer triggers
+az acr task timer add --name timertask --registry acrpromiz --timer-name timer2 --schedule "30 10 * * *"
+
+az acr task timer update --name timertask --registry acrpromiz --timer-name timer2 --schedule "30 11 * * *"
+
+az acr task timer list --name timertask --registry acrpromiz
+
+az acr task timer remove --name timertask --registry acrpromiz --timer-name timer2
+
+# ACR Tasks does not support the {second} or {year} field in cron expressions. If you copy a cron expression used in another system, be sure to remove those fields, if they are used. 
+
+# ACR Tasks uses the NCronTab library to interpret cron expressions.
