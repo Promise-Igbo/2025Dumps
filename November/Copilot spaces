@@ -1,0 +1,35 @@
+# https://github.com/Promise-Igbo/skills-scale-institutional-knowledge-using-copilot-spaces.git
+
+# Step 1: Create and prime your Copilot Space
+
+# Create your OctoAcme Project Management Hub Copilot Space
+# Navigate to GitHub Copilot Spaces https://github.com/copilot/spaces (ensure you have access to this feature)
+# Click Create Space button
+# Name your Space: OctoAcme Project Management Hub
+# Click Create Space
+# Add a description: Centralizing and democratizing project management knowledge for the OctoAcme organization
+# In your newly created Copilot Space, look for the Instructions button
+# Add the instructions to provide context about the repository and its purpose, then save
+
+# Add your cloned repository as a source repository to your Copilot Space
+# In your newly created Copilot Space, look for Add sources button
+# Add this repo: Promise-Igbo/skills-scale-institutional-knowledge-using-copilot-spaces
+# Select the docs and the .github/ISSUE_TEMPLATE folders
+# Verify the repository appears in your sources list
+# Ask Copilot spaces questions surrounding the repo
+
+# Step 2: Explore & summarize project management processes and create a README
+# Generate a summary. Should be 3-4 paragraphs covering the main processes OctoAcme uses for project management.
+# Open your Copilot Space you created in the previous step. https://github.com/copilot/spaces or by clicking the name
+# Start a new conversation in the Copilot Space
+
+# Attach an issue and create a pull request for the Copilot coding agent
+# Find your issue number: Go to https://github.com/Promise-Igbo/skills-scale-institutional-knowledge-using-copilot-spaces/issues and note the issue number from Step 1 (it should be about creating a README for project management docs)
+# Attach the issue to your conversation: In your Copilot Space, type the following (replace # with your actual issue number): @Promise-Igbo/skills-scale-institutional-knowledge-using-copilot-spaces/issues/#
+# After typing the issue reference below, press <SHIFT> + <ENTER> to add it to the conversation without sending the message yet.
+# You should see the issue title and details appear in your conversation
+# Create the pull request and add prompt to create the pull request, then send
+# Allow the coding agent: When prompted, select Allow to let the coding agent work on your repository
+# Monitor progress, you should receive a notification that the Copilot coding agent is working on your pull request
+# We can check pull request status from our Copilot Space: check open pull requests
+# Review and merge, once the pull request is ready

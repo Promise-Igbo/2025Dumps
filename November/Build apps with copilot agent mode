@@ -1,0 +1,22 @@
+# https://github.com/Promise-Igbo/skills-build-applications-w-copilot-agent-mode.git
+
+# Create Codespace: https://codespaces.new/Promise-Igbo/skills-build-applications-w-copilot-agent-mode?quickstart=1
+
+## Use Copilot agent mode to create a branch and publish it.
+# Open the GitHub Copilot Chat window
+#  Paste the prompt: Please create and publish a new Git branch called build-octofit-app
+# select the Agent, press the Continue.
+# look in the VS Code lower status bar, on the left, to see the active branch. It should now say build-octofit-app
+
+## Prompt for GitHub Copilot in agent mode to start the creation of our application
+Let's take the following step by step execute the commands.
+
+Follow the instructions
+
+- Follow the OctoFit Tracker App structure
+- Follow the Python virtual environment creation
+- Create the requirements.txt file
+- Install the Python requirements from the file created
+
+# With our new changes complete, please commit and push the changes to branch build-octofit-app
+
