@@ -1,0 +1,49 @@
+# setup the codespace
+https://codespaces.new/Promise-Igbo/skills-integrate-mcp-with-copilot?quickstart=1
+
+# Validate the Copilot Chat and Python extensions are installed and enabled.
+# Verify our application runs before modification. In the left sidebar, select the Run and Debug tab and then press the Start Debugging icon.
+# Use the Ports tab to find the webpage address, open it, and verify it is running
+# Inside your codespace, open the Copilot Chat panel and verify Agent mode is selected.
+# Inside your codespace, navigate to the .vscode folder, and create a new file named mcp.json. Paste the following contents:
+{
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+
+# In the .vscode/mcp.json file, click the Start button and accept the prompt to authenticate with GitHub. This has just informed GitHub Copilot of the MCP server's capabilities.
+# In the Copilot side panel, click the 🛠️ icon to show the additional capabilities.
+# Commit and push the .vscode/mcp.json file to the main branch.
+
+## Quickly find and save ideas
+# Close any open files inside your codespace. This will help reduce unnecessary context.
+# Ensure the Copilot Chat panel is open and Agent mode is selected. Verify the MCP server tools are also still available.
+# Ask Copilot to search GitHub for projects similar to this one.
+Search for any other repositories for organizing extra curricular activities
+# When an MCP tool is required, Copilot may ask for permission. Verify the request and modify if necessary, then click Continue.
+# Ask Copilot to describe one of the projects. Explore until you find something you like.
+Please look at the code for the 3rd option and give me a detailed description of the features.
+# Use Copilot to compare and generate ideas for enhancements.
+Please compare these features to our project. Which would be new?
+# Use Copilot create issues to save these ideas.
+I like it. Let's create issues for these in my repository.
+# Copilot will ask for permission to create issues on your repository. Click Continue for each new issue. Reminder: verify the request before running.
+# At the top of the Copilot Chat panel, click the New Chat icon (plus sign).
+
+## Solve issues with Agent Mode and GitHub MCP Server
+# Ensure the Copilot Chat panel is open and Agent mode is selected. Verify the MCP server tools are also still available.
+# Ask Copilot about the open issues on this repository.
+How many open issues are there on my repository?
+# Ask Copilot to summarize the important issues.
+Oh no. That's too many for me! Please get the list of issues,
+review the descriptions and comments, and pick the top 3 most important.
+# Review the suggested issues. If Copilot didn't give a specific recommendation, try providing some feedback to narrow the results.
+# With the list narrowed, ask Copilot to implement an issue.
+#codebase Let's do the first one. Follow these steps:
+1. Checkout a new local branch for making our changes.
+2. Make the changes then confirm with me that they look correct.
+3. Push the changes and create a pull request.
