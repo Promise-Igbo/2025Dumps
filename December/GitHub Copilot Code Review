@@ -1,0 +1,31 @@
+## https://github.com/Promise-Igbo/skills-copilot-code-review.git
+
+# Create Codespace
+# Validate the GitHub Copilot and Python extensions are installed and enabled
+# Try running the application. In the left sidebar, select the Run and Debug tab and then press the Start Debugging icon.
+# Use the Ports tab to find the webpage address, open it, and verify it is running.
+
+## Ask Copilot for a review
+# create a new branch with the following name: add-announcement-banner
+# Open the src/static/index.html file. Add the following after the <body> tag.
+<div class="announcement-banner">
+  📢 Activity registration is open until the end of the month. Don't lose your spot!
+</div>
+
+# Open the src/static/styles.css file. Add the following to the end.
+.announcement-banner {
+  background-color: #4caf50;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-weight: bold;
+}
+
+# Refresh the running app to see the change.
+
+# open the source control panel and ensure there are uncommitted changes.
+# Hover over the Changes section to show various icons. Click the Code Review button and wait a moment for Copilot to add comments.
+# Expand the Comments panel to find a list of review feedback from Copilot.
+# Use the Apply or Discard buttons to address Copilot's feedback.
+# Commit and push the Announcement related changes to the add-announcement-banner branch.
+
